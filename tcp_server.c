@@ -12,7 +12,40 @@
 #define BACKLOG 10
 #define PORT 1437
 #define BUFFER_SIZE 2048
+/**
+ * setup_sever: setup the server and return the server socket fd
+ * @ip_address: the ip address of the network interface ...
+ * @port_number: the server port number
+ * @return: the socket file descriptor
+ * */
 
+int setup_server(char *ip_address, int port_number) {
+	struct sockaddr_in server_socket;
+	int server_socket_fd;
+
+	// Define the Address and port for the server
+	inet_pton(AF_INET, ip_address, &(server_socket.sin_addr));
+	server_socket.sin_family = AF_INET; // IPv4
+	server_socket.sin_port = htons(port_number);// port number
+	// Create a socket fd
+	server_socket_fd = socket(AF_INET, SOCK_STREAM, 0);
+	if (server_socket_fd == -1){
+		fprintf(stderr, "socket fd error: %s\n", strerror(errno));
+		return -1;
+	}
+	// bind the socket_fd to the server address
+	if (-1 == bind(server_socket_fd, (const struct sockaddr *)&server_socket, sizeof(server_socket))) {
+		fprintf(stderr, "bind: %s\n", strerror(errno));
+		return -1;
+	}
+	printf("Bound socket to localhost port %d\n", port_number);
+	if (-1 == listen(server_socket_fd, BACKLOG)) {
+		fprintf(stderr, "listen error: %s\n", strerror(errno));
+		return (-1);
+	}
+	printf("Listening on port %d ...\n", port_number);
+	return (server_socket_fd);
+}
 int main() {
 	printf("---- SERVER ---- \n\n");
 	char buffer[BUFFER_SIZE];
@@ -28,32 +61,7 @@ int main() {
 	//
 	int index_fd;
 
-	// Define the Address and port for the server
-	server_socket.sin_addr.s_addr = INADDR_ANY;//27.0.0.1
-	server_socket.sin_family = AF_INET; // IPv4
-	server_socket.sin_port = htons(PORT); // port number 
-
-	// Create a socket fd
-	server_socket_fd = socket(AF_INET, SOCK_STREAM, 0);
-	if (server_socket_fd == -1){
-		fprintf(stderr, "socket fd error: %s\n", strerror(errno));
-		return (1);
-	}
-	// bind the socket_fd to the server address
-	status = bind(server_socket_fd, (const struct sockaddr *)&server_socket, sizeof(server_socket));
-	if (status == -1){
-		fprintf(stderr, "bind: %s\n", strerror(errno));
-		return (2);
-	}
-	printf("Bound socket to localhost port %d\n", PORT);
-
-	printf("Listening on port %d ...\n", PORT);
-	status = listen(server_socket_fd, BACKLOG);
-	if (status != 0) {
-		fprintf(stderr, "listen error: %s\n", strerror(errno));
-		return (3);
-	}
-	// Accept incoming connection
+	
 	addr_size = sizeof(client_socket);
 	client_socket_fd = accept(server_socket_fd, (struct sockaddr *)&client_socket, &addr_size);
 	if (client_socket_fd == -1){
